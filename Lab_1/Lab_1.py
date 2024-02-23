@@ -4,17 +4,41 @@ import matplotlib.pyplot as plt
 
 
 def GenerateRandomVectors(meanVector, covarianceMatrix, N, savedFileName):
+    # A = np.zeros((2, 2))
+    # A[0, 0] = math.sqrt(covarianceMatrix[0, 0])
+    # A[1, 0] = covarianceMatrix[1, 0] / math.sqrt(covarianceMatrix[0, 0])
+    # A[1, 1] = math.sqrt(covarianceMatrix[1, 1] - covarianceMatrix[0, 1] * covarianceMatrix[0, 1] /
+    #                     covarianceMatrix[0, 0])
+    # print(A)
+    #
+    # vectorsNorm01 = np.random.randn(2, N)
+    # x = np.matmul(A, vectorsNorm01) + np.repeat(meanVector, N, 1)
+    # np.save(savedFileName, x)
+
+    vectorsNorm01 = np.array([np.zeros(N), np.zeros(N)])
+
+    for i in range(50):
+        uni = np.array([np.random.uniform(0, 6, N), np.random.uniform(0, 6, N)])
+        vectorsNorm01 += uni
+    vectorsNorm01 /= 50
+
+    m = [[3], [3]]
+    d = [[3], [3]]
+
+    vectorsNorm01 = np.sqrt(50) * (vectorsNorm01 - np.repeat(m, N, 1)) / np.sqrt(d)
+
+    # vectorsNorm01 = np.random.randn(2, N)
+
     A = np.zeros((2, 2))
     A[0, 0] = math.sqrt(covarianceMatrix[0, 0])
     A[1, 0] = covarianceMatrix[1, 0] / math.sqrt(covarianceMatrix[0, 0])
-    A[1, 1] = math.sqrt(covarianceMatrix[1, 1] - covarianceMatrix[0, 1] * covarianceMatrix[0, 1] /
-                        covarianceMatrix[0, 0])
-    print(A)
-
-    vectorsNorm01 = np.random.randn(2, N)
+    A[1, 1] = math.sqrt(covarianceMatrix[1, 1] - covarianceMatrix[0, 1] * covarianceMatrix[0, 1]
+                        / covarianceMatrix[0, 0])
 
     x = np.matmul(A, vectorsNorm01) + np.repeat(meanVector, N, 1)
+
     np.save(savedFileName, x)
+
 
 
 def Score_M(file):
@@ -42,12 +66,30 @@ def Score_B(file):
     return sum / 200
 
 
+def CalcM(z):
+    return np.array([[np.mean(z[0])], [np.mean(z[1])]])
+
+
+def Dist_B(first, second):
+    x1 = np.load(first)
+    x2 = np.load(second)
+    return ((0.25 * np.transpose(CalcM(x2) - CalcM(x1)) *
+            np.power((np.cov(x1) + np.cov(x2)) / 2, -1)) * (CalcM(x2) - CalcM(x1)) +
+            0.5 * np.log(np.abs((np.cov(x1) + np.cov(x2)) / 2)) / np.sqrt(np.cov(x1) * np.cov(x2)))
+
+
+# Только если корр. матрицы равны!
+def Dist_M(first, second):
+    x1 = np.load(first)
+    x2 = np.load(second)
+    return np.transpose(CalcM(x2) - CalcM(x1)) * np.power(np.cov(x1), -1) * (CalcM(x2) - CalcM(x1))
+
 
 def Task1(first, second):
     N = 200
     M1 = np.array([[0], [1]])
     M2 = np.array([[-1], [-1]])
-    B = np.array([[5, 2], [2, 2]])
+    B = np.array([[0.35, 0.15], [0.1, 0.35]])
 
     GenerateRandomVectors(M1, B, N, first)
     GenerateRandomVectors(M2, B, N, second)
@@ -64,9 +106,9 @@ def Task2(first, second, third):
     M1 = np.array([[0], [1]])
     M2 = np.array([[-1], [-1]])
     M3 = np.array([[2], [1]])
-    B1 = np.array([[5, 2], [2, 1]])
-    B2 = np.array([[3, 2], [1, 4]])
-    B3 = np.array([[4, 1], [2, 1]])
+    B1 = np.array([[0.45, 0.15], [0.15, 0.35]])
+    B2 = np.array([[0.15, 0.02], [0.02, 0.15]])
+    B3 = np.array([[0.25, -0.17], [-0.17, 0.25]])
 
     GenerateRandomVectors(M1, B1, N, first)
     GenerateRandomVectors(M2, B2, N, second)
@@ -125,3 +167,6 @@ if __name__ == '__main__':
     Task1(file_2_1, file_2_2)
     Task2(file_3_1, file_3_2, file_3_3)
     Task3(file_2_1, file_2_2, file_3_1, file_3_2, file_3_3)
+
+    print(Dist_B(file_2_1, file_2_2))
+    print(Dist_M(file_2_1, file_2_2))
