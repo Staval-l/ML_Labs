@@ -3,6 +3,9 @@ import math
 import matplotlib.pyplot as plt
 
 
+B0 = np.array([[0.35, 0.15], [0.1, 0.35]])
+
+
 def GenerateRandomVectors(meanVector, covarianceMatrix, N, savedFileName):
     # A = np.zeros((2, 2))
     # A[0, 0] = math.sqrt(covarianceMatrix[0, 0])
@@ -70,7 +73,7 @@ def CalcM(z):
     return np.array([[np.mean(z[0])], [np.mean(z[1])]])
 
 
-def Dist_B(first, second):
+def Dist_B(first, second):  # Неправильная реализация!
     x1 = np.load(first)
     x2 = np.load(second)
     return ((0.25 * np.transpose(CalcM(x2) - CalcM(x1)) *
@@ -79,10 +82,15 @@ def Dist_B(first, second):
 
 
 # Только если корр. матрицы равны!
-def Dist_M(first, second):
+def Dist_M(first, second, B):  # Неправильная реализация!
     x1 = np.load(first)
     x2 = np.load(second)
-    return np.transpose(CalcM(x2) - CalcM(x1)) * np.power(np.cov(x1), -1) * (CalcM(x2) - CalcM(x1))
+    return np.transpose(CalcM(x2) - CalcM(x1)) * B * (CalcM(x2) - CalcM(x1))
+
+
+# Правильная реализация:
+# def Mahalanobis_distance(M0, M1, B):
+#     return (M1 - M0) @ np.linalg.inv(B) @ np.transpose(M1 - M0)
 
 
 def Task1(first, second):
@@ -106,7 +114,7 @@ def Task2(first, second, third):
     M1 = np.array([[0], [1]])
     M2 = np.array([[-1], [-1]])
     M3 = np.array([[2], [1]])
-    B1 = np.array([[0.45, 0.15], [0.15, 0.35]])
+    B1 = np.array([[0.45, 0.15], [0.15, 0.45]])
     B2 = np.array([[0.15, 0.02], [0.02, 0.15]])
     B3 = np.array([[0.25, -0.17], [-0.17, 0.25]])
 
@@ -169,4 +177,4 @@ if __name__ == '__main__':
     Task3(file_2_1, file_2_2, file_3_1, file_3_2, file_3_3)
 
     print(Dist_B(file_2_1, file_2_2))
-    print(Dist_M(file_2_1, file_2_2))
+    print(Dist_M(file_2_1, file_2_2, B0))
