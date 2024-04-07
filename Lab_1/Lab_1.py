@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 
 
-B0 = np.array([[0.35, 0.15], [0.1, 0.35]])
+B0 = np.array([[0.35, 0.15], [0.15, 0.35]])  # Тут была неправильная корр. матрица
 
 
 def GenerateRandomVectors(meanVector, covarianceMatrix, N, savedFileName):
