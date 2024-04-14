@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from Lab_2.Lab_2 import boundary_of_bayes_classifier_for_N_with_same_B, boundary_of_bayes_classifier_for_N
+from Lab_2.Lab_2 import (boundary_of_bayes_classifier_for_N_with_same_B, boundary_of_bayes_classifier_for_N,
+                         get_erroneous_classification_probabilities, experimental_probability_error)
 
 
 M_0 = np.array([0, 1])
@@ -11,6 +12,43 @@ B_0 = np.array([[0.35, 0.15], [0.15, 0.35]])  # Для одинаковых
 
 B_1 = np.array([[0.45, 0.15], [0.15, 0.45]])  # Для различных
 B_2 = np.array([[0.15, 0.02], [0.02, 0.15]])
+
+
+def get_errors_first(sample_1, sample_2, weights, wN):
+    counter_0 = 0
+    counter_1 = 0
+
+    W = weights[0:2]
+
+    for x in sample_1:
+        if W.T @ x + wN > 0:
+            counter_0 += 1
+
+    for x in sample_2:
+        if W.T @ x + wN < 0:
+            counter_1 += 1
+
+    print(f"Ошибка первого рода: {counter_0 / sample_1.shape[0]}")
+    print(f"Ошибка второго рода: {counter_1 / sample_2.shape[0]}")
+
+
+def get_errors(sample_1, sample_2, W_POPOL):
+    counter_0 = 0
+    counter_1 = 0
+
+    W = W_POPOL[0:2]
+    wN = W_POPOL[2]
+
+    for x in sample_1:
+        if W.T @ x + wN > 0:
+            counter_0 += 1
+
+    for x in sample_2:
+        if W.T @ x + wN < 0:
+            counter_1 += 1
+
+    print(f"Ошибка первого рода: {counter_0 / sample_1.shape[0]}")
+    print(f"Ошибка второго рода: {counter_1 / sample_2.shape[0]}")
 
 
 def show_all_borders(borders):
@@ -64,6 +102,8 @@ def task_1_same_B():
     threshold_2 = np.log(0.5 / 0.5)
     y_2 = boundary_of_bayes_classifier_for_N_with_same_B(x, M_0, M_1, B_0, threshold_2)  # БК
 
+    get_errors_first(sample_1, sample_2, weights, threshold_1)
+
     return x, y_1, x, y_2
 
 
@@ -86,6 +126,8 @@ def task_1_different_B():
     sigma_2 = np.transpose(weights) @ B_2 @ weights
     threshold = -1/(sigma_1 + sigma_2) * M_dif @ np.linalg.inv(0.5 * (B_1 + B_2)) @ ((sigma_1 * M_1) + (sigma_2 * M_0))
     boundary_02 = np.array((-threshold - weights[0] * x) / weights[1])
+
+    get_errors_first(sample_3, sample_4, weights, threshold)
 
     plt.ylim(-2, 3)
     plt.xlim(min_value, max_value)
@@ -121,6 +163,8 @@ def task_2_same_B():
 
     x = np.linspace(min_value, max_value, 200)
     y = np.array((-weights[2] - weights[0] * x) / weights[1])
+
+    get_errors(sample_1, sample_2, weights)
 
     return x, y
 
@@ -159,6 +203,8 @@ def task_2_different_B():
 
     y = np.array((-weights[2] - weights[0] * x) / weights[1])
 
+    get_errors(sample_3, sample_4, weights)
+
     plt.ylim(-2, 3)
     plt.xlim(min_value, max_value)
 
@@ -170,6 +216,30 @@ def task_2_different_B():
 
     plt.show()
 
+
+def show_borders(W_arr, x, sample_1, sample_2):
+    size = np.array(W_arr).shape
+
+    plt.plot(sample_1[:, 0], sample_1[:, 1], color='blue', linestyle='none', marker='.')
+    plt.plot(sample_2[:, 0], sample_2[:, 1], color='green', linestyle='none', marker='*')
+
+    W = W_arr[0]
+
+    y = np.array((-W[2] - W[0] * x) / W[1])
+
+    plt.plot(x, y, color='black', linewidth=3)
+
+    for i in range(1, size[0], 100):
+        W = W_arr[i]
+        y = np.array((-W[2] - W[0] * x) / W[1])
+        plt.plot(x, y, linewidth=1)
+
+    W = W_arr[-1]
+    y = np.array((-W[2] - W[0] * x) / W[1])
+    plt.plot(x, y, linewidth=3)
+    plt.ylim(-4, 3)
+
+    plt.show()
 
 def task_3_same_B():
     sample_1 = np.load("Files/arrayX2_1.npy")
@@ -183,9 +253,11 @@ def task_3_same_B():
     min_value = min(np.min(sample_1[:, 0]), np.min(sample_2[:, 0]))
     max_value = max(np.max(sample_1[:, 0]), np.max(sample_2[:, 0]))
 
-    bet = 0.6
+    bet = 0.8
 
-    weights = np.zeros((3, 1))
+    #weights = np.zeros((3, 1))
+    #weights = np.ones((3, 1))
+    weights = np.array([[-1], [0], [0]])
     weights_arr = []
 
     x_s = np.concatenate((sample_1, sample_2), axis=0)
@@ -200,21 +272,21 @@ def task_3_same_B():
     sgn_prev = 0
     alph = 1 / np.power(1, bet)
 
-    for _ in range(10):
+    for _ in range(5):
         for k in range(class_0_size[0] + class_1_size[0]):
             x_k = x_s[:, ind[k]].reshape((class_0_size[1] + 1, 1))
             d = np.matmul(np.transpose(weights), x_k)[0]
 
-            if ((d[0] < 0) and (r[ind[k]] > 0)) or ((d[0] >= 0) and (r[ind[k]] < 0)):
-                sgn = np.sign(r[ind[k]] - d)[0]
+            # if ((d[0] < 0) and (r[ind[k]] > 0)) or ((d[0] >= 0) and (r[ind[k]] < 0)):
+            sgn = np.sign(r[ind[k]] - d)[0]
 
-                if sgn != sgn_prev:
-                    counter += 1
-                    sgn_prev = sgn
-                    alph = 1 / np.power(counter + 1, bet)
+                # if sgn != sgn_prev:
+            counter += 1
+            sgn_prev = sgn
+            alph = 1 / np.power(counter + 1, bet)
 
-                weights = weights + alph * x_k * sgn
-                weights_arr.append(weights)
+            weights = weights + alph * x_k * sgn
+            weights_arr.append(weights)
 
         np.random.shuffle(ind)
 
@@ -223,6 +295,10 @@ def task_3_same_B():
 
     threshold_2 = np.log(0.5 / 0.5)
     y_2 = boundary_of_bayes_classifier_for_N_with_same_B(x, M_0, M_1, B_0, threshold_2)  # БК
+
+    get_errors(sample_1, sample_2, weights)
+
+    show_borders(weights_arr, x, sample_1, sample_2)
 
     return x, y, x, y_2
 
@@ -241,9 +317,11 @@ def task_3_different_B():
 
     boundary_01 = boundary_of_bayes_classifier_for_N(x, M_0, M_1, B_1, B_2, 0)  # БК
 
-    bet = 0.6
+    bet = 0.8
 
-    weights = np.zeros((3, 1))
+    #weights = np.zeros((3, 1))
+    #weights = np.ones((3, 1))
+    weights = np.array([[-1], [0], [0]])
     weights_arr = []
 
     x_s = np.concatenate((sample_3, sample_4), axis=0)
@@ -258,35 +336,40 @@ def task_3_different_B():
     sgn_prev = 0
     alph = 1 / np.power(1, bet)
 
-    for _ in range(10):
+    for _ in range(5):
         for k in range(class_0_size[0] + class_1_size[0]):
             x_k = x_s[:, ind[k]].reshape((class_0_size[1] + 1, 1))
             d = np.matmul(np.transpose(weights), x_k)[0]
 
-            if ((d[0] < 0) and (r[ind[k]] > 0)) or ((d[0] >= 0) and (r[ind[k]] < 0)):
-                sgn = np.sign(r[ind[k]] - d)[0]
+            #if ((d[0] < 0) and (r[ind[k]] > 0)) or ((d[0] >= 0) and (r[ind[k]] < 0)):
+            sgn = np.sign(r[ind[k]] - d)[0]
 
-                if sgn != sgn_prev:
-                    counter += 1
-                    sgn_prev = sgn
-                    alph = 1 / np.power(counter + 1, bet)
+                #if sgn != sgn_prev:
+            counter += 1
+            sgn_prev = sgn
+            alph = 1 / np.power(counter + 1, bet)
 
-                weights = weights + alph * x_k * sgn
-                weights_arr.append(weights)
+            weights = weights + alph * x_k * sgn
+            weights_arr.append(weights)
 
         np.random.shuffle(ind)
 
     y = np.array((-weights[2] - weights[0] * x) / weights[1])
 
-    plt.ylim(-2, 3)
-    plt.xlim(min_value, max_value)
+    get_errors(sample_3, sample_4, weights)
 
-    plt.plot(sample_3[:, 0], sample_3[:, 1], color='blue', linestyle='none', marker='.')
-    plt.plot(sample_4[:, 0], sample_4[:, 1], color='green', linestyle='none', marker='*')
-    plt.scatter(boundary_01[:, 0], boundary_01[:, 1], color="red", s=[5])
-    plt.plot(x, y, color='purple', linestyle=':')
+    show_borders(weights_arr, x, sample_3, sample_4)
 
-    plt.show()
+    # plt.ylim(-2, 3)
+    # plt.xlim(min_value, max_value)
+    #
+    # plt.plot(sample_3[:, 0], sample_3[:, 1], color='blue', linestyle='none', marker='.')
+    # plt.plot(sample_4[:, 0], sample_4[:, 1], color='green', linestyle='none', marker='*')
+    # plt.scatter(boundary_01[:, 0], boundary_01[:, 1], color="red", s=[5])
+    # plt.plot(x, y, color='purple', linestyle=':')
+    #
+    # plt.show()
+
 
 
 def task_1():
@@ -312,7 +395,7 @@ def task_3():
     x_0, y_0, x_1, y_1 = task_3_same_B()
 
     borders = [[x_0, y_0], [x_1, y_1]]
-    show_all_borders(borders)
+    # show_all_borders(borders)
 
     task_3_different_B()
 
