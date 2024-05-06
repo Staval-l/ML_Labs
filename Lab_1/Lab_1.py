@@ -165,12 +165,12 @@ def Task3(file1, file2, file3, file4, file5):
 
 
 if __name__ == '__main__':
-    file_2_1 = "arrayX2_1.npy"
-    file_2_2 = "arrayX2_2.npy"
+    file_2_1 = "Files/arrayX2_1.npy"
+    file_2_2 = "Files/arrayX2_2.npy"
 
-    file_3_1 = "arrayX3_1.npy"
-    file_3_2 = "arrayX3_2.npy"
-    file_3_3 = "arrayX3_3.npy"
+    file_3_1 = "Files/arrayX3_1.npy"
+    file_3_2 = "Files/arrayX3_2.npy"
+    file_3_3 = "Files/arrayX3_3.npy"
 
     Task1(file_2_1, file_2_2)
     Task2(file_3_1, file_3_2, file_3_3)

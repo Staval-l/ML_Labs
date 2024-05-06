@@ -107,7 +107,7 @@ def get_erroneous_classification_probabilities(M_l, M_j, B):
     print(f"Суммарный вероятность ошибочной классификации: {p_0 + p_1}")
 
 
-def experimental_probability_error(x, M_l, M_j, B_l, B_j, P_l, P_j):
+def experimental_probability_error(x, M_l, M_j, B_l, B_j):
     count = 0
 
     calc_d = lambda vec, M, B, P: (np.log(P) - np.log(np.sqrt(np.linalg.det(B))) -
